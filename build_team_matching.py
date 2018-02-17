@@ -44,11 +44,6 @@ df.columns = [
         'additional_requests',
         'knows_to_pay_dues'
         ]
-#print the column names
-print(df.columns)
-#get the values for a given column
-academic_standings = set(df['school_year'].values)
-previous_build_teams = set(df['was_in_build_team'].values)
 
 technical_major = ['CS','MIS','EE/ECE', 'MIS, Economics', 'Math','CS, Other Business (e.g. Finance, Marketing, Management, Supply Chain, Accounting, etc.)']
 
@@ -89,12 +84,6 @@ score_mapping = {
         'A lot of experience': 2
         }
 
-for skill in tech_skills:
-    df[skill] = df[skill].map(score_mapping)
-
-for skill in business_skills:
-    df[skill] = df[skill].map(score_mapping)
-
 case_interests = [
         'blockchain_interest',
         'bpa_interest',
@@ -102,43 +91,13 @@ case_interests = [
         'nlp_interest',
         ]
 
-interest_mapping = [
+interest_mapping = {
         "Not interested at all": 0,
         "Not sure whether I'd be interested": 1,
         "Wouldn't mind doing it": 2,
         "Pretty interested": 3,
         "Extremely interested": 4
-        ]
-
-for interest in case_interests:
-    df[interest] = df[interest].map(score_mapping)
-
-def get_score(df, skills):
-    score = sum([df[skill] for skill in skills])
-    return score
-
-
-df = df.assign(technical_score = lambda x: get_score(x, tech_skills))
-df = df.assign(business_score = lambda x: get_score(x, business_skills))
-
-
-for index, row in df.iterrows():
-    print(row['name'], row['technical_score'], row['business_score'])
-
-
-tech_score_avg = ...
-tech_score_variance = ...
-business_score_avg = ...
-business_score_variance = ...
-
-# TODO: just make the z-scores into columns in the dataframe
-def summarize_skills(student):
-    # ideally, we'd be dealing with the raw columns instea of the
-    # tech_score/business_score summaries, but this is good enough for now
-    tech_z_score = (tech_score(student) - tech_score_avg)/math.sqrt(tech_score_variance)
-    business_z_score = (business_score(student) - business_score_avg)/math.sqrt(business_score_variance)
-    return [tech_z_score, business_z_score]
-
+        }
 
 cases = [
         'blockchain',
@@ -154,10 +113,51 @@ case_mapping = {
         'nlp': 'nlp_interest'
         }
 
-number_of_veterans = sum(df[previous_build_teams])
-number_of_cases = len(cases)
+for skill in tech_skills:
+    df[skill] = df[skill].map(score_mapping)
 
-expected_veterans = num_veterans/num_cases
+for skill in business_skills:
+    df[skill] = df[skill].map(score_mapping)
+
+for interest in case_interests:
+    df[interest] = df[interest].map(score_mapping)
+
+def get_score(df, skills):
+    score = sum([df[skill] for skill in skills])
+    return score
+
+df = df.assign(technical_score = lambda x: get_score(x, tech_skills))
+df = df.assign(business_score = lambda x: get_score(x, business_skills))
+
+#################################################################################
+### At this point, the table has been formatted and extra columns have been added
+#################################################################################
+
+#get the values for a given column
+academic_standings = set(df['school_year'].values)
+previous_build_teams = set(df['was_in_build_team'].values)
+
+for index, row in df.iterrows():
+    print(row['name'], row['technical_score'], row['business_score'])
+
+tech_score_avg = ...
+tech_score_variance = ...
+business_score_avg = ...
+business_score_variance = ...
+
+# TODO: just make the z-scores into columns in the dataframe
+def summarize_skills(student):
+    # ideally, we'd be dealing with the raw columns instea of the
+    # tech_score/business_score summaries, but this is good enough for now
+    tech_z_score = (tech_score(student) - tech_score_avg)/math.sqrt(tech_score_variance)
+    business_z_score = (business_score(student) - business_score_avg)/math.sqrt(business_score_variance)
+    return [tech_z_score, business_z_score]
+
+
+#number_of_veterans = sum(df[previous_build_teams])
+#number_of_cases = len(cases)
+
+#expected_veterans = num_veterans/num_cases
 # scores how good a given group is, where each student is a row in the table
 # group is one of 
 def get_group_score(students, case):
@@ -173,9 +173,16 @@ def get_group_score(students, case):
     group_score = 1.0*sum(individual_skill_scores) + 2.5*sum(individual_preference_scores) + 1.5*veterans_z_score
     return group_score
 
+
 #print(academic_standings)
 #print(previous_build_teams)
 
 #get a data frame with selected columns
 FORMAT = ['name', 'email']
 df_selected = df[FORMAT]
+
+
+
+writer = pandas.ExcelWriter('output.xlsx')
+df.to_excel(writer,'Sheet1')
+writer.save()
